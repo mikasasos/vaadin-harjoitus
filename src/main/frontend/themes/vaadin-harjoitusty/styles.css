@@ -23,11 +23,3 @@ html {
 
     --lumo-border-radius: 12px;
 }
-/*:focus {
-    outline: none;
-}
-
-:focus-visible {
-    outline: 2px solid var(--lumo-primary-color);
-    outline-offset: 2px;
-}*/
