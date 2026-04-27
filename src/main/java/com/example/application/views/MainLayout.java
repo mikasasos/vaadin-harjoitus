@@ -96,10 +96,20 @@ public class MainLayout extends AppLayout implements AfterNavigationObserver {
             User user = maybeUser.get();
 
             Avatar avatar = new Avatar(user.getName());
-            DownloadHandler imageHandler = DownloadHandler
-                    .fromInputStream(event -> new DownloadResponse(new ByteArrayInputStream(user.getProfilePicture()),
-                            "profile-pic", "image/jpeg", -1));
-            avatar.setImageHandler(imageHandler);
+
+
+            if (user.getProfilePicture() != null) {
+                DownloadHandler imageHandler = DownloadHandler
+                        .fromInputStream(event -> new DownloadResponse(
+                                new ByteArrayInputStream(user.getProfilePicture()),
+                                "profile-pic",
+                                "image/jpeg",
+                                -1
+                        ));
+                avatar.setImageHandler(imageHandler);
+            }
+
+
             avatar.setThemeName("xsmall");
             avatar.getElement().setAttribute("tabindex", "-1");
 

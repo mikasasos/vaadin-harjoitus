@@ -1,3 +1,33 @@
 @import url('./main-layout.css');
 @import url('./views/book-list-view.css');
 @import url('./views/gridwith-filters-view.css');
+
+html {
+    --lumo-font-family: "Comic Sans MS", "Roboto", sans-serif;
+
+    --lumo-primary-color: hsl(8, 36%, 54%);
+    --lumo-primary-color-50pct: hsla(8, 36%, 54%, 0.5);
+    --lumo-primary-color-10pct: hsla(8, 36%, 54%, 0.1);
+
+    --lumo-success-color: hsl(145, 73%, 54%);
+
+    --lumo-warning-color: hsl(39, 100%, 50%);
+
+    --lumo-error-color: hsl(4, 30%, 41%);
+
+    --lumo-base-color: #eee2df;
+    --lumo-body-text-color: #1f2937;
+
+    --lumo-contrast-5pct: rgba(0, 0, 0, 0.05);
+    --lumo-contrast-10pct: rgba(0, 0, 0, 0.1);
+
+    --lumo-border-radius: 12px;
+}
+/*:focus {
+    outline: none;
+}
+
+:focus-visible {
+    outline: 2px solid var(--lumo-primary-color);
+    outline-offset: 2px;
+}*/

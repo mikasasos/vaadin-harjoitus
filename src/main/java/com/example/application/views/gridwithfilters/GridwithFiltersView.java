@@ -109,7 +109,7 @@ public class GridwithFiltersView extends Div {
 
             // Action buttons
             Button resetBtn = new Button("Reset");
-            resetBtn.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+            resetBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
             resetBtn.addClickListener(e -> {
                 name.clear();
                 phone.clear();
