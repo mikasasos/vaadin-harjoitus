@@ -2,6 +2,7 @@ package com.example.application.views.booklist;
 
 import com.example.application.data.SampleBook;
 import com.example.application.services.SampleBookService;
+import com.example.application.views.MainLayout;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -40,7 +41,7 @@ import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.vaadin.lineawesome.LineAwesomeIconUrl;
 
 @PageTitle("Book List")
-@Route("/:sampleBookID?/:action?(edit)")
+@Route(value = "/:sampleBookID?/:action?(edit)", layout = MainLayout.class)
 @Menu(order = 0, icon = LineAwesomeIconUrl.COLUMNS_SOLID)
 @RouteAlias("")
 @PermitAll

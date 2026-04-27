@@ -9,6 +9,8 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Lob;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotBlank;
+
 import java.util.Set;
 
 @Entity
@@ -18,6 +20,7 @@ public class User extends AbstractEntity {
     private String username;
     private String name;
     @JsonIgnore
+    @NotBlank
     private String hashedPassword;
     @Enumerated(EnumType.STRING)
     @ElementCollection(fetch = FetchType.EAGER)
