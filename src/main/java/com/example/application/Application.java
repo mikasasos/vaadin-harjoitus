@@ -3,6 +3,8 @@ package com.example.application;
 import com.example.application.data.SamplePersonRepository;
 import com.vaadin.flow.component.dependency.StyleSheet;
 import com.vaadin.flow.component.page.AppShellConfigurator;
+import com.vaadin.flow.component.page.Push;
+import com.vaadin.flow.shared.communication.PushMode;
 import com.vaadin.flow.theme.Theme;
 import com.vaadin.flow.theme.lumo.Lumo;
 import javax.sql.DataSource;
@@ -25,6 +27,7 @@ import org.springframework.context.annotation.Bean;
 @StyleSheet("styles.css")
 @EnableConfigurationProperties(SqlInitializationProperties.class)
 @Theme(value = "vaadin-harjoitusty")
+@Push(PushMode.AUTOMATIC)
 public class Application implements AppShellConfigurator {
 
     public static void main(String[] args) {

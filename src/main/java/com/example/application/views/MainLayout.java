@@ -1,6 +1,10 @@
 package com.example.application.views;
 
 import com.example.application.data.User;
+import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.combobox.ComboBox;
+import com.vaadin.flow.component.page.WebStorage;
+import com.vaadin.flow.i18n.I18NProvider;
 import com.example.application.security.AuthenticatedUser;
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.applayout.DrawerToggle;
@@ -18,6 +22,8 @@ import com.vaadin.flow.component.menubar.MenuBar;
 import com.vaadin.flow.component.orderedlayout.Scroller;
 import com.vaadin.flow.component.sidenav.SideNav;
 import com.vaadin.flow.component.sidenav.SideNavItem;
+import com.vaadin.flow.i18n.LocaleChangeEvent;
+import com.vaadin.flow.i18n.LocaleChangeObserver;
 import com.vaadin.flow.router.AfterNavigationEvent;
 import com.vaadin.flow.router.AfterNavigationObserver;
 import com.vaadin.flow.router.Layout;
@@ -30,6 +36,7 @@ import com.vaadin.flow.server.streams.DownloadResponse;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import java.io.ByteArrayInputStream;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 
 /**
@@ -37,16 +44,28 @@ import java.util.Optional;
  */
 @Layout
 @AnonymousAllowed
-public class MainLayout extends AppLayout implements AfterNavigationObserver {
+public class MainLayout extends AppLayout implements AfterNavigationObserver, LocaleChangeObserver {
 
     private H1 viewTitle;
+    private ComboBox<Locale> languageSelections;
+    private Span appName;
+
+    private final I18NProvider i18nProvider;
 
     private AuthenticatedUser authenticatedUser;
     private AccessAnnotationChecker accessChecker;
 
-    public MainLayout(AuthenticatedUser authenticatedUser, AccessAnnotationChecker accessChecker) {
+    public MainLayout(I18NProvider i18nProvider, AuthenticatedUser authenticatedUser, AccessAnnotationChecker accessChecker) {
+        this.i18nProvider = i18nProvider;
         this.authenticatedUser = authenticatedUser;
         this.accessChecker = accessChecker;
+
+        WebStorage.getItem("locale", locale -> {
+            if (locale != null) {
+                UI.getCurrent().setLocale(Locale.forLanguageTag(locale));
+            }
+        });
+
 
         setPrimarySection(Section.DRAWER);
         addDrawerContent();
@@ -64,7 +83,7 @@ public class MainLayout extends AppLayout implements AfterNavigationObserver {
     }
 
     private void addDrawerContent() {
-        Span appName = new Span("Vaadin_harjoitustyö");
+        appName = new Span(getTranslation("myapp.name"));
         appName.addClassNames(LumoUtility.FontWeight.SEMIBOLD, LumoUtility.FontSize.LARGE);
         Header header = new Header(appName);
 
@@ -90,6 +109,16 @@ public class MainLayout extends AppLayout implements AfterNavigationObserver {
 
     private Footer createFooter() {
         Footer layout = new Footer();
+
+        languageSelections = new ComboBox<>(getTranslation("languageComboBox"));
+        languageSelections.setItems(i18nProvider.getProvidedLocales());
+        layout.add(languageSelections);
+        languageSelections.addValueChangeListener(event -> {
+            UI.getCurrent().setLocale(event.getValue());
+            WebStorage.setItem("locale", event.getValue().toLanguageTag());
+            UI.getCurrent().getPage().reload();
+        });
+
 
         Optional<User> maybeUser = authenticatedUser.get();
         if (maybeUser.isPresent()) {
@@ -129,7 +158,7 @@ public class MainLayout extends AppLayout implements AfterNavigationObserver {
 
             layout.add(userMenu);
         } else {
-            Anchor loginLink = new Anchor("login", "Sign in");
+            Anchor loginLink = new Anchor("login", getTranslation("login"));
             layout.add(loginLink);
         }
 
@@ -143,5 +172,11 @@ public class MainLayout extends AppLayout implements AfterNavigationObserver {
 
     private String getCurrentPageTitle() {
         return MenuConfiguration.getPageHeader(getContent()).orElse("");
+    }
+
+    @Override
+    public void localeChange(LocaleChangeEvent localeChangeEvent) {
+        languageSelections.setLabel(getTranslation("languageComboBox"));
+        appName.setText(getTranslation("myapp.name"));
     }
 }

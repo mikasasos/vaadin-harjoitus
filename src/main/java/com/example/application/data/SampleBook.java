@@ -1,8 +1,7 @@
 package com.example.application.data;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Lob;
+import jakarta.persistence.*;
+
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Set;
@@ -20,6 +19,11 @@ public class SampleBook extends AbstractEntity {
     private String isbn;
     private Status status;
     private LocalDate dateAdded;
+
+   /* @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "bookdetail_id", referencedColumnName = "id")
+    private BookDetail bookDetail;*/
+
 
 
     public byte[] getImage() {
@@ -74,4 +78,12 @@ public class SampleBook extends AbstractEntity {
     public void setDateAdded(LocalDate dateAdded) {
         this.dateAdded = dateAdded;
     }
+
+    /*public BookDetail getBookDetail() {
+        return bookDetail;
+    }
+
+    public void setBookDetail(BookDetail bookDetail) {
+        this.bookDetail = bookDetail;
+    }*/
 }

@@ -22,4 +22,6 @@ html {
     --lumo-contrast-10pct: rgba(0, 0, 0, 0.1);
 
     --lumo-border-radius: 12px;
+
+    --lumo-primary-text-color: #ff8181;
 }

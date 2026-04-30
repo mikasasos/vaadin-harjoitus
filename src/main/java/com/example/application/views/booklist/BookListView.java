@@ -1,9 +1,6 @@
 package com.example.application.views.booklist;
 
-import com.example.application.data.Role;
-import com.example.application.data.SampleBook;
-import com.example.application.data.SamplePerson;
-import com.example.application.data.Status;
+import com.example.application.data.*;
 import com.example.application.services.SampleBookService;
 import com.example.application.services.SamplePersonService;
 import com.example.application.views.MainLayout;
@@ -36,6 +33,8 @@ import com.vaadin.flow.data.binder.BeanValidationBinder;
 import com.vaadin.flow.data.binder.ValidationException;
 import com.vaadin.flow.data.converter.StringToIntegerConverter;
 import com.vaadin.flow.data.renderer.LitRenderer;
+import com.vaadin.flow.i18n.LocaleChangeEvent;
+import com.vaadin.flow.i18n.LocaleChangeObserver;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Menu;
@@ -49,10 +48,7 @@ import jakarta.annotation.security.PermitAll;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import jakarta.persistence.criteria.*;
 import org.springframework.data.jpa.domain.Specification;
@@ -64,7 +60,7 @@ import org.vaadin.lineawesome.LineAwesomeIconUrl;
 @Menu(order = 0, icon = LineAwesomeIconUrl.COLUMNS_SOLID)
 @RouteAlias("")
 @PermitAll
-public class BookListView extends Div implements BeforeEnterObserver {
+public class BookListView extends Div implements BeforeEnterObserver, LocaleChangeObserver {
 
     private final String SAMPLEBOOK_ID = "sampleBookID";
     private final String SAMPLEBOOK_EDIT_ROUTE_TEMPLATE = "/%s/edit";
@@ -80,10 +76,14 @@ public class BookListView extends Div implements BeforeEnterObserver {
     private TextField isbn;
     private ComboBox<Status> status;
     private DatePicker dateAdded;
+    /*private TextField description;
+    private TextField rating;
+    private TextField language;*/
 
-    private final Button cancel = new Button("Cancel");
-    private final Button save = new Button("Save");
-    private final Button delete = new Button("Delete");
+    private final Button cancel = new Button();
+    private final Button save = new Button();
+    private final Button delete = new Button();
+
 
     private final BeanValidationBinder<SampleBook> binder;
 
@@ -118,13 +118,32 @@ public class BookListView extends Div implements BeforeEnterObserver {
                 });
         grid.addColumn(imageRenderer).setHeader("Image").setWidth("68px").setFlexGrow(0);
 
-        grid.addColumn("name").setAutoWidth(true);
-        grid.addColumn("author").setAutoWidth(true);
-        grid.addColumn("publicationDate").setAutoWidth(true);
-        grid.addColumn("pages").setAutoWidth(true);
-        grid.addColumn("isbn").setAutoWidth(true);
-        grid.addColumn("dateAdded").setAutoWidth(true);
-        grid.addColumn("status").setAutoWidth(true);
+        grid.addColumn("name").setHeader(getTranslation("name")).setAutoWidth(true);
+        grid.addColumn("author").setHeader(getTranslation("author")).setAutoWidth(true);
+        grid.addColumn("publicationDate").setHeader(getTranslation("publicationDate")).setAutoWidth(true);
+        grid.addColumn("pages").setHeader(getTranslation("pages")).setAutoWidth(true);
+        grid.addColumn("isbn").setHeader(getTranslation("isbn")).setAutoWidth(true);
+        grid.addColumn("dateAdded").setHeader(getTranslation("dateAdded")).setAutoWidth(true);
+        grid.addColumn("status").setHeader(getTranslation("status")).setAutoWidth(true);
+
+        /*grid.addColumn(book ->
+                book.getBookDetail() != null
+                        ? book.getBookDetail().getDescription()
+                        : ""
+        ).setAutoWidth(true);
+
+        grid.addColumn(book ->
+                book.getBookDetail() != null
+                        ? book.getBookDetail().getLanguage()
+                        : ""
+        ).setAutoWidth(true);
+
+        grid.addColumn(book ->
+                book.getBookDetail() != null
+                        ? book.getBookDetail().getRating()
+                        : ""
+        ).setAutoWidth(true);*/
+
         grid.setItems(query -> sampleBookService.
                 list(VaadinSpringDataHelpers.toSpringPageRequest(query),filters).
                 stream());
@@ -141,15 +160,62 @@ public class BookListView extends Div implements BeforeEnterObserver {
         });
 
         status.setItems(Status.values());
-        status.setItemLabelGenerator(Status::name);
+        status.setItemLabelGenerator(status ->
+                getTranslation("status." + status.name().toLowerCase())
+        );
 
         // Configure Form
         binder = new BeanValidationBinder<>(SampleBook.class);
 
         // Bind fields. This is where you'd define e.g. validation rules
-        binder.forField(pages).withConverter(new StringToIntegerConverter("Only numbers are allowed")).bind("pages");
+        binder.forField(pages).withConverter(new StringToIntegerConverter(getTranslation("nmbersonlyerror"))).bind("pages");
+
+
+        /*binder.forField(description).bind(
+                sampleBook -> sampleBook.getBookDetail() != null
+                        ? sampleBook.getBookDetail().getDescription()
+                        : "",
+                (sampleBook, value) -> {
+                    if (sampleBook.getBookDetail() == null) {
+                        sampleBook.setBookDetail(new BookDetail());
+                    }
+                    sampleBook.getBookDetail().setDescription(value);
+                }
+        );
+
+        binder.forField(language).bind(
+                sampleBook -> sampleBook.getBookDetail() != null
+                        ? sampleBook.getBookDetail().getLanguage()
+                        : "",
+                (sampleBook, value) -> {
+                    if (sampleBook.getBookDetail() == null) {
+                        sampleBook.setBookDetail(new BookDetail());
+                    }
+                    sampleBook.getBookDetail().setLanguage(value);
+                }
+        );
+
+        binder.forField(rating)
+                .withConverter(new StringToIntegerConverter("Only numbers are allowed")).
+                bind(
+                sampleBook -> sampleBook.getBookDetail() != null
+                        ? sampleBook.getBookDetail().getRating()
+                        : null,
+                (sampleBook, value) -> {
+                    if(sampleBook.getBookDetail() == null){
+                        sampleBook.setBookDetail(new BookDetail());
+                    }
+                    sampleBook.getBookDetail().setRating(value);
+                }
+        );*/
 
         binder.bindInstanceFields(this);
+        /*binder.bind(name, "name");
+        binder.bind(author, "author");
+        binder.bind(publicationDate, "publicationDate");
+        binder.bind(isbn, "isbn");
+        binder.bind(status, "status");
+        binder.bind(dateAdded, "dateAdded");*/
 
         attachImageUpload(image, imagePreview);
 
@@ -163,20 +229,25 @@ public class BookListView extends Div implements BeforeEnterObserver {
                 if (this.sampleBook == null) {
                     this.sampleBook = new SampleBook();
                 }
+
+                /*if (this.sampleBook.getBookDetail() == null) {
+                    this.sampleBook.setBookDetail(new BookDetail());
+                }*/
+
                 binder.writeBean(this.sampleBook);
                 sampleBook.setDateAdded(LocalDate.now());
                 sampleBookService.save(this.sampleBook);
                 clearForm();
                 refreshGrid();
-                Notification.show("Data updated");
+                Notification.show(getTranslation("data_updated"));
                 UI.getCurrent().navigate(BookListView.class);
             } catch (ObjectOptimisticLockingFailureException exception) {
                 Notification n = Notification.show(
-                        "Error updating the data. Somebody else has updated the record while you were making changes.");
+                        getTranslation("update_at_sametime"));
                 n.setPosition(Position.MIDDLE);
                 n.addThemeVariants(NotificationVariant.LUMO_PRIMARY);
             } catch (ValidationException validationException) {
-                Notification.show("Failed to update the data. Check again that all values are valid");
+                Notification.show(getTranslation("update_fail"));
             }
         });
 
@@ -191,12 +262,13 @@ public class BookListView extends Div implements BeforeEnterObserver {
                     clearForm();
                 }
                 else {
-                    Notification.show("Cannot Delete ID is null");
+                    Notification.show(getTranslation("null_id_error"));
                 }
             } catch (ValidationException ex) {
                 throw new RuntimeException(ex);
             }
         });
+
     }
 
     @Override
@@ -207,7 +279,7 @@ public class BookListView extends Div implements BeforeEnterObserver {
             if (sampleBookFromBackend.isPresent()) {
                 populateForm(sampleBookFromBackend.get());
             } else {
-                Notification.show(String.format("The requested sampleBook was not found, ID = %s", sampleBookId.get()),
+                Notification.show(String.format(getTranslation("data_not_found"), sampleBookId.get()),
                         3000, Notification.Position.BOTTOM_START);
                 // when a row is selected but the data is no longer available,
                 // refresh grid
@@ -240,6 +312,19 @@ public class BookListView extends Div implements BeforeEnterObserver {
         dateAdded = new DatePicker("Date Added");
         dateAdded.setReadOnly(true);
         status = new ComboBox<>("Status");
+        /*description = new TextField("Description");
+        language = new TextField("Language");
+        rating = new TextField("Rating");
+        rating.setVisible(false);
+
+        status.addValueChangeListener(event -> {
+           if(event.getValue() == Status.COMPLETED){
+               rating.setVisible(true);
+           } else {
+               rating.clear();
+               rating.setVisible(false);
+           }
+        });*/
 
 
         formLayout.add(imageLabel, image, name, author, publicationDate, pages, isbn,dateAdded,status);
@@ -270,20 +355,26 @@ public class BookListView extends Div implements BeforeEnterObserver {
         splitLayout.addToPrimary(leftLayout);
     }
 
-    public static class Filters extends HorizontalLayout implements Specification<SampleBook> {
+    public static class Filters extends HorizontalLayout implements Specification<SampleBook>{
 
-        private final TextField name = new TextField("Name");
-        private final TextField author = new TextField("Author");
-        private final DatePicker startDate = new DatePicker("Publication Dates");
+        private final TextField name = new TextField();
+        private final TextField author = new TextField();
+        private final DatePicker startDate = new DatePicker();
         private final DatePicker endDate = new DatePicker();
         private final DatePicker dateAdded = new DatePicker();
-        private final ComboBox<Status> status = new ComboBox<>("Status");
+        private final ComboBox<Status> status = new ComboBox<>();
+        private final Button reset = new Button();
+        private final Button search = new Button();
+
+
 
         public Filters(Runnable onSearch,
                        SampleBookService sampleBookService) {
 
             status.setItems(Status.values());
-            status.setItemLabelGenerator(Status::name);
+            status.setItemLabelGenerator(status ->
+                    getTranslation("status." + status.name().toLowerCase())
+            );
 
             setWidthFull();
 
@@ -293,13 +384,11 @@ public class BookListView extends Div implements BeforeEnterObserver {
             addClassName("filter-layout");
             addClassNames(LumoUtility.Padding.Horizontal.LARGE, LumoUtility.Padding.Vertical.MEDIUM,
                     LumoUtility.BoxSizing.BORDER);
-            name.setPlaceholder("Name of the book");
 
 
-            // Action buttons
-            Button resetBtn = new Button("Reset");
-            resetBtn.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
-            resetBtn.addClickListener(e -> {
+
+            reset.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+            reset.addClickListener(e -> {
                 name.clear();
                 author.clear();
                 startDate.clear();
@@ -308,11 +397,32 @@ public class BookListView extends Div implements BeforeEnterObserver {
                 status.clear();
                 onSearch.run();
             });
-            Button searchBtn = new Button("Search");
-            searchBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-            searchBtn.addClickListener(e -> onSearch.run());
 
-            Div actions = new Div(resetBtn, searchBtn);
+            search.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+            search.addClickListener(e -> onSearch.run());
+
+            /* Testasin pushin tällä
+            Button testPush = new Button("Test Push");
+
+            testPush.addClickListener(e -> {
+                UI ui = UI.getCurrent();
+
+                new Thread(() -> {
+                    for (int i = 1; i <= 5; i++) {
+                        int value = i;
+
+                        ui.access(() -> {
+                            add(new Text("Update: " + value));
+                        });
+
+                        try {
+                            Thread.sleep(1000);
+                        } catch (InterruptedException ignored) {}
+                    }
+                }).start();
+            });*/
+
+            Div actions = new Div(reset, search);
             actions.addClassName(LumoUtility.Gap.SMALL);
             actions.addClassName("actions");
 
@@ -320,13 +430,6 @@ public class BookListView extends Div implements BeforeEnterObserver {
         }
 
         private Component createDateRangeFilter() {
-            startDate.setPlaceholder("From");
-
-            endDate.setPlaceholder("To");
-
-            // For screen readers
-            startDate.setAriaLabel("From date");
-            endDate.setAriaLabel("To date");
 
             FlexLayout dateRangeComponent = new FlexLayout(startDate, new Text(" – "), endDate);
             dateRangeComponent.setAlignItems(FlexComponent.Alignment.BASELINE);
@@ -396,6 +499,22 @@ public class BookListView extends Div implements BeforeEnterObserver {
             }
             return expression;
         }
+        public void applyTranslation() {
+            name.setLabel(getTranslation("name"));
+            author.setLabel(getTranslation("author"));
+            status.setLabel(getTranslation("status"));
+            startDate.setLabel(getTranslation("startDate"));
+            endDate.setLabel(getTranslation("endDate"));
+            dateAdded.setLabel(getTranslation("dateAdded"));
+            reset.setText(getTranslation("reset"));
+            search.setText(getTranslation("search"));
+            startDate.setPlaceholder(getTranslation("from"));
+            endDate.setPlaceholder(getTranslation("to"));
+            name.setPlaceholder(getTranslation("bookname"));
+            // For screen readers
+            startDate.setAriaLabel(getTranslation("from"));
+            endDate.setAriaLabel(getTranslation("to"));
+        }
 
     }
 
@@ -444,5 +563,20 @@ public class BookListView extends Div implements BeforeEnterObserver {
             this.imagePreview.setSrc("data:image;base64," + Base64.getEncoder().encodeToString(value.getImage()));
         }
 
+    }
+    @Override
+    public void localeChange(LocaleChangeEvent localeChangeEvent) {
+        filters.applyTranslation();
+        cancel.setText(getTranslation("cancel"));
+        save.setText(getTranslation("save"));
+        delete.setText(getTranslation("delete"));
+
+        name.setLabel(getTranslation("name"));
+        author.setLabel(getTranslation("author"));
+        pages.setLabel(getTranslation("pages"));
+        isbn.setLabel(getTranslation("isbn"));
+        status.setLabel(getTranslation("status"));
+        dateAdded.setLabel(getTranslation("dateAdded"));
+        publicationDate.setLabel(getTranslation("publicationDate"));
     }
 }
