@@ -2,16 +2,16 @@ package com.example.application.views.booklist;
 
 import com.example.application.data.*;
 import com.example.application.services.SampleBookService;
-import com.example.application.services.SamplePersonService;
 import com.example.application.views.MainLayout;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.upload.Upload;
+import com.vaadin.flow.component.upload.UploadI18N;
+import com.vaadin.flow.router.HasDynamicTitle;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.checkbox.CheckboxGroup;
 import com.vaadin.flow.component.combobox.ComboBox;
-import com.vaadin.flow.component.combobox.MultiSelectComboBox;
 import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
@@ -28,7 +28,6 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.splitlayout.SplitLayout;
 import com.vaadin.flow.component.textfield.TextField;
-import com.vaadin.flow.component.upload.Upload;
 import com.vaadin.flow.data.binder.BeanValidationBinder;
 import com.vaadin.flow.data.binder.ValidationException;
 import com.vaadin.flow.data.converter.StringToIntegerConverter;
@@ -38,7 +37,6 @@ import com.vaadin.flow.i18n.LocaleChangeObserver;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Menu;
-import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouteAlias;
 import com.vaadin.flow.server.StreamResource;
@@ -55,12 +53,11 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.vaadin.lineawesome.LineAwesomeIconUrl;
 
-@PageTitle("Book List")
 @Route(value = "/:sampleBookID?/:action?(edit)", layout = MainLayout.class)
 @Menu(order = 0, icon = LineAwesomeIconUrl.COLUMNS_SOLID)
 @RouteAlias("")
 @PermitAll
-public class BookListView extends Div implements BeforeEnterObserver, LocaleChangeObserver {
+public class BookListView extends Div implements BeforeEnterObserver, LocaleChangeObserver, HasDynamicTitle {
 
     private final String SAMPLEBOOK_ID = "sampleBookID";
     private final String SAMPLEBOOK_EDIT_ROUTE_TEMPLATE = "/%s/edit";
@@ -68,7 +65,9 @@ public class BookListView extends Div implements BeforeEnterObserver, LocaleChan
     private final Grid<SampleBook> grid = new Grid<>(SampleBook.class, false);
 
     private Upload image;
+    private UploadI18N i18n;
     private Image imagePreview;
+    private NativeLabel imageLabel;
     private TextField name;
     private TextField author;
     private DatePicker publicationDate;
@@ -76,6 +75,16 @@ public class BookListView extends Div implements BeforeEnterObserver, LocaleChan
     private TextField isbn;
     private ComboBox<Status> status;
     private DatePicker dateAdded;
+
+    private Grid.Column<SampleBook> imageColumn;
+    private Grid.Column<SampleBook> nameColumn;
+    private Grid.Column<SampleBook> authorColumn;
+    private Grid.Column<SampleBook> publicationDateColumn;
+    private Grid.Column<SampleBook> pagesColumn;
+    private Grid.Column<SampleBook> isbnColumn;
+    private Grid.Column<SampleBook> statusColumn;
+    private Grid.Column<SampleBook> dateAddedColumn;
+
     /*private TextField description;
     private TextField rating;
     private TextField language;*/
@@ -116,15 +125,15 @@ public class BookListView extends Div implements BeforeEnterObserver, LocaleChan
                         return "";
                     }
                 });
-        grid.addColumn(imageRenderer).setHeader("Image").setWidth("68px").setFlexGrow(0);
+        imageColumn = grid.addColumn(imageRenderer).setHeader(getTranslation("image")).setWidth("68px").setFlexGrow(0);
 
-        grid.addColumn("name").setHeader(getTranslation("name")).setAutoWidth(true);
-        grid.addColumn("author").setHeader(getTranslation("author")).setAutoWidth(true);
-        grid.addColumn("publicationDate").setHeader(getTranslation("publicationDate")).setAutoWidth(true);
-        grid.addColumn("pages").setHeader(getTranslation("pages")).setAutoWidth(true);
-        grid.addColumn("isbn").setHeader(getTranslation("isbn")).setAutoWidth(true);
-        grid.addColumn("dateAdded").setHeader(getTranslation("dateAdded")).setAutoWidth(true);
-        grid.addColumn("status").setHeader(getTranslation("status")).setAutoWidth(true);
+        nameColumn = grid.addColumn("name").setHeader(getTranslation("name")).setAutoWidth(true);
+        authorColumn = grid.addColumn("author").setHeader(getTranslation("author")).setAutoWidth(true);
+        publicationDateColumn = grid.addColumn("publicationDate").setHeader(getTranslation("publicationDate")).setAutoWidth(true);
+        pagesColumn = grid.addColumn("pages").setHeader(getTranslation("pages")).setAutoWidth(true);
+        isbnColumn = grid.addColumn("isbn").setHeader(getTranslation("isbn")).setAutoWidth(true);
+        dateAddedColumn = grid.addColumn("dateAdded").setHeader(getTranslation("dateAdded")).setAutoWidth(true);
+        statusColumn = grid.addColumn("status").setHeader(getTranslation("status")).setAutoWidth(true);
 
         /*grid.addColumn(book ->
                 book.getBookDetail() != null
@@ -268,9 +277,11 @@ public class BookListView extends Div implements BeforeEnterObserver, LocaleChan
                 throw new RuntimeException(ex);
             }
         });
-
     }
-
+    @Override
+    public String getPageTitle(){
+        return getTranslation("pagetitle");
+    }
     @Override
     public void beforeEnter(BeforeEnterEvent event) {
         Optional<Long> sampleBookId = event.getRouteParameters().get(SAMPLEBOOK_ID).map(Long::parseLong);
@@ -298,12 +309,16 @@ public class BookListView extends Div implements BeforeEnterObserver, LocaleChan
         editorLayoutDiv.add(editorDiv);
 
         FormLayout formLayout = new FormLayout();
-        NativeLabel imageLabel = new NativeLabel("Image");
+        imageLabel = new NativeLabel(getTranslation("image"));
         imagePreview = new Image();
         imagePreview.setWidth("100%");
         image = new Upload();
+        i18n = new UploadI18N();
+        i18n.setDropFiles(new UploadI18N.DropFiles().setOne(getTranslation("dropfile")));
+        i18n.setAddFiles(new UploadI18N.AddFiles().setOne(getTranslation("uploadfile")));
         image.getStyle().set("box-sizing", "border-box");
         image.getElement().appendChild(imagePreview.getElement());
+        image.setI18n(i18n);
         name = new TextField("Name");
         author = new TextField("Author");
         publicationDate = new DatePicker("Publication Date");
@@ -514,6 +529,9 @@ public class BookListView extends Div implements BeforeEnterObserver, LocaleChan
             // For screen readers
             startDate.setAriaLabel(getTranslation("from"));
             endDate.setAriaLabel(getTranslation("to"));
+            status.setItemLabelGenerator(status ->
+                    getTranslation("status." + status.name().toLowerCase())
+            );
         }
 
     }
@@ -567,6 +585,8 @@ public class BookListView extends Div implements BeforeEnterObserver, LocaleChan
     @Override
     public void localeChange(LocaleChangeEvent localeChangeEvent) {
         filters.applyTranslation();
+
+
         cancel.setText(getTranslation("cancel"));
         save.setText(getTranslation("save"));
         delete.setText(getTranslation("delete"));
@@ -578,5 +598,24 @@ public class BookListView extends Div implements BeforeEnterObserver, LocaleChan
         status.setLabel(getTranslation("status"));
         dateAdded.setLabel(getTranslation("dateAdded"));
         publicationDate.setLabel(getTranslation("publicationDate"));
+        imageLabel.setText(getTranslation("image"));
+
+        imageColumn.setHeader(getTranslation("image"));
+        nameColumn.setHeader(getTranslation("name"));
+        authorColumn.setHeader(getTranslation("author"));
+        pagesColumn.setHeader(getTranslation("pages"));
+        isbnColumn.setHeader(getTranslation("isbn"));
+        statusColumn.setHeader(getTranslation("status"));
+        dateAddedColumn.setHeader(getTranslation("dateAdded"));
+        publicationDateColumn.setHeader(getTranslation("publicationDate"));
+
+        i18n.setDropFiles(new UploadI18N.DropFiles().setOne(getTranslation("dropfile")));
+        i18n.setAddFiles(new UploadI18N.AddFiles().setOne(getTranslation("uploadfile")));
+        image.setI18n(i18n);
+
+        status.setItemLabelGenerator(item ->
+                getTranslation("status." + item.name().toLowerCase()));
+
+        UI.getCurrent().getPage().setTitle(getPageTitle());
     }
 }

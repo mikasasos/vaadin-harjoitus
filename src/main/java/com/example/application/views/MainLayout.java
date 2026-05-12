@@ -49,6 +49,7 @@ public class MainLayout extends AppLayout implements AfterNavigationObserver, Lo
     private H1 viewTitle;
     private ComboBox<Locale> languageSelections;
     private Span appName;
+    private MenuItem signOutItem;
 
     private final I18NProvider i18nProvider;
 
@@ -116,7 +117,6 @@ public class MainLayout extends AppLayout implements AfterNavigationObserver, Lo
         languageSelections.addValueChangeListener(event -> {
             UI.getCurrent().setLocale(event.getValue());
             WebStorage.setItem("locale", event.getValue().toLanguageTag());
-            UI.getCurrent().getPage().reload();
         });
 
 
@@ -152,7 +152,7 @@ public class MainLayout extends AppLayout implements AfterNavigationObserver, Lo
             div.add(new Icon("lumo", "dropdown"));
             div.addClassNames(LumoUtility.Display.FLEX, LumoUtility.AlignItems.CENTER, LumoUtility.Gap.SMALL);
             userName.add(div);
-            userName.getSubMenu().addItem("Sign out", e -> {
+            signOutItem = userName.getSubMenu().addItem(getTranslation("signout"), e -> {
                 authenticatedUser.logout();
             });
 
@@ -178,5 +178,8 @@ public class MainLayout extends AppLayout implements AfterNavigationObserver, Lo
     public void localeChange(LocaleChangeEvent localeChangeEvent) {
         languageSelections.setLabel(getTranslation("languageComboBox"));
         appName.setText(getTranslation("myapp.name"));
+        if(signOutItem != null){
+            signOutItem.setText(getTranslation("signout"));
+        }
     }
 }
