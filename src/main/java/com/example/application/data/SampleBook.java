@@ -1,5 +1,8 @@
 package com.example.application.data;
 
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.JsonIdentityReference;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import jakarta.persistence.*;
 
 import java.time.LocalDate;
@@ -20,10 +23,11 @@ public class SampleBook extends AbstractEntity {
     private Status status;
     private LocalDate dateAdded;
 
-   /* @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "bookdetail_id", referencedColumnName = "id")
-    private BookDetail bookDetail;*/
-
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    @JsonIdentityReference(alwaysAsId = true)
+    @JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class,property = "id")
+    private User user;
 
 
     public byte[] getImage() {
@@ -79,11 +83,11 @@ public class SampleBook extends AbstractEntity {
         this.dateAdded = dateAdded;
     }
 
-    /*public BookDetail getBookDetail() {
-        return bookDetail;
+    public User getUser() {
+        return user;
     }
 
-    public void setBookDetail(BookDetail bookDetail) {
-        this.bookDetail = bookDetail;
-    }*/
+    public void setUser(User user) {
+        this.user = user;
+    }
 }

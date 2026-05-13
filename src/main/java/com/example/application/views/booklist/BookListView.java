@@ -2,6 +2,7 @@ package com.example.application.views.booklist;
 
 import com.example.application.data.*;
 import com.example.application.services.SampleBookService;
+import com.example.application.services.UserService;
 import com.example.application.views.MainLayout;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Text;
@@ -42,7 +43,6 @@ import com.vaadin.flow.router.RouteAlias;
 import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.spring.data.VaadinSpringDataHelpers;
 import com.vaadin.flow.theme.lumo.LumoUtility;
-import jakarta.annotation.security.PermitAll;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.time.LocalDate;
@@ -52,6 +52,8 @@ import jakarta.annotation.security.RolesAllowed;
 import jakarta.persistence.criteria.*;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.vaadin.lineawesome.LineAwesomeIconUrl;
 
 @Route(value = "/:sampleBookID?/:action?(edit)", layout = MainLayout.class)
@@ -102,12 +104,21 @@ public class BookListView extends Div implements BeforeEnterObserver, LocaleChan
     private SampleBook sampleBook;
 
     private final SampleBookService sampleBookService;
+    private final UserService userService;
 
-    public BookListView(SampleBookService sampleBookService) {
+    public BookListView(SampleBookService sampleBookService, UserService userService, UserRepository userRepository) {
         this.sampleBookService = sampleBookService;
+        this.userService = userService;
+
         addClassNames("book-list-view");
 
         filters = new Filters(this::refreshGridFromSearch, this.sampleBookService);
+
+        //Otan tämän hetkisen käyttäjän, jotta voin muokata käyttäjän kirjoja.
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String currentUserName = authentication.getName();
+
+        User currentUser = userRepository.findByUsername(currentUserName).orElseThrow();
 
         // Create UI
         SplitLayout splitLayout = new SplitLayout();
@@ -136,27 +147,9 @@ public class BookListView extends Div implements BeforeEnterObserver, LocaleChan
         dateAddedColumn = grid.addColumn("dateAdded").setHeader(getTranslation("dateAdded")).setAutoWidth(true);
         statusColumn = grid.addColumn("status").setHeader(getTranslation("status")).setAutoWidth(true);
 
-        /*grid.addColumn(book ->
-                book.getBookDetail() != null
-                        ? book.getBookDetail().getDescription()
-                        : ""
-        ).setAutoWidth(true);
-
-        grid.addColumn(book ->
-                book.getBookDetail() != null
-                        ? book.getBookDetail().getLanguage()
-                        : ""
-        ).setAutoWidth(true);
-
-        grid.addColumn(book ->
-                book.getBookDetail() != null
-                        ? book.getBookDetail().getRating()
-                        : ""
-        ).setAutoWidth(true);*/
-
-        grid.setItems(query -> sampleBookService.
-                list(VaadinSpringDataHelpers.toSpringPageRequest(query),filters).
-                stream());
+        grid.setItems(query -> sampleBookService
+                .listForUser(currentUserName,VaadinSpringDataHelpers.toSpringPageRequest(query),filters)
+                .stream());
         grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
 
         // when a row is selected or deselected, populate form
@@ -181,53 +174,10 @@ public class BookListView extends Div implements BeforeEnterObserver, LocaleChan
         binder.forField(pages).withConverter(new StringToIntegerConverter(getTranslation("nmbersonlyerror"))).bind("pages");
 
 
-        /*binder.forField(description).bind(
-                sampleBook -> sampleBook.getBookDetail() != null
-                        ? sampleBook.getBookDetail().getDescription()
-                        : "",
-                (sampleBook, value) -> {
-                    if (sampleBook.getBookDetail() == null) {
-                        sampleBook.setBookDetail(new BookDetail());
-                    }
-                    sampleBook.getBookDetail().setDescription(value);
-                }
-        );
-
-        binder.forField(language).bind(
-                sampleBook -> sampleBook.getBookDetail() != null
-                        ? sampleBook.getBookDetail().getLanguage()
-                        : "",
-                (sampleBook, value) -> {
-                    if (sampleBook.getBookDetail() == null) {
-                        sampleBook.setBookDetail(new BookDetail());
-                    }
-                    sampleBook.getBookDetail().setLanguage(value);
-                }
-        );
-
-        binder.forField(rating)
-                .withConverter(new StringToIntegerConverter("Only numbers are allowed")).
-                bind(
-                sampleBook -> sampleBook.getBookDetail() != null
-                        ? sampleBook.getBookDetail().getRating()
-                        : null,
-                (sampleBook, value) -> {
-                    if(sampleBook.getBookDetail() == null){
-                        sampleBook.setBookDetail(new BookDetail());
-                    }
-                    sampleBook.getBookDetail().setRating(value);
-                }
-        );*/
-
         binder.bindInstanceFields(this);
-        /*binder.bind(name, "name");
-        binder.bind(author, "author");
-        binder.bind(publicationDate, "publicationDate");
-        binder.bind(isbn, "isbn");
-        binder.bind(status, "status");
-        binder.bind(dateAdded, "dateAdded");*/
 
         attachImageUpload(image, imagePreview);
+
 
         cancel.addClickListener(e -> {
             clearForm();
@@ -239,10 +189,12 @@ public class BookListView extends Div implements BeforeEnterObserver, LocaleChan
                 if (this.sampleBook == null) {
                     this.sampleBook = new SampleBook();
                 }
-
                 binder.writeBean(this.sampleBook);
+
                 sampleBook.setDateAdded(LocalDate.now());
+                sampleBook.setUser(currentUser);
                 sampleBookService.save(this.sampleBook);
+
                 clearForm();
                 refreshGrid();
                 Notification.show(getTranslation("data_updated"));
@@ -264,6 +216,7 @@ public class BookListView extends Div implements BeforeEnterObserver, LocaleChan
 
                 if(this.sampleBook != null && this.sampleBook.getId() != null){
                     sampleBookService.delete(this.sampleBook.getId());
+
                     grid.getDataProvider().refreshAll();
                     clearForm();
                 }
@@ -324,20 +277,6 @@ public class BookListView extends Div implements BeforeEnterObserver, LocaleChan
         dateAdded = new DatePicker("Date Added");
         dateAdded.setReadOnly(true);
         status = new ComboBox<>("Status");
-        /*description = new TextField("Description");
-        language = new TextField("Language");
-        rating = new TextField("Rating");
-        rating.setVisible(false);
-
-        status.addValueChangeListener(event -> {
-           if(event.getValue() == Status.COMPLETED){
-               rating.setVisible(true);
-           } else {
-               rating.clear();
-               rating.setVisible(false);
-           }
-        });*/
-
 
         formLayout.add(imageLabel, image, name, author, publicationDate, pages, isbn,dateAdded,status);
 

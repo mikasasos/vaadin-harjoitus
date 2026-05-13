@@ -37,6 +37,9 @@ public class SampleBookService {
         return repository.findAll(filter, pageable);
     }
 
+    public Page<SampleBook> listForUser(String username, Pageable pageable, Specification<SampleBook> spec){
+        return repository.findByUserUsername(username,pageable);
+    }
     public int count() {
         return (int) repository.count();
     }
