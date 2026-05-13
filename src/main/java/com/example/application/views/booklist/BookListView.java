@@ -4,6 +4,7 @@ import com.example.application.data.*;
 import com.example.application.services.SampleBookService;
 import com.example.application.services.UserService;
 import com.example.application.views.MainLayout;
+import com.example.application.views.login.LoginView;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.UI;
@@ -67,6 +68,7 @@ public class BookListView extends Div implements BeforeEnterObserver, LocaleChan
 
     private final Grid<SampleBook> grid = new Grid<>(SampleBook.class, false);
 
+    private User currentUser;
     private Upload image;
     private UploadI18N i18n;
     private Image imagePreview;
@@ -114,12 +116,6 @@ public class BookListView extends Div implements BeforeEnterObserver, LocaleChan
 
         filters = new Filters(this::refreshGridFromSearch, this.sampleBookService);
 
-        //Otan tämän hetkisen käyttäjän, jotta voin muokata käyttäjän kirjoja.
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String currentUserName = authentication.getName();
-
-        User currentUser = userRepository.findByUsername(currentUserName).orElseThrow();
-
         // Create UI
         SplitLayout splitLayout = new SplitLayout();
 
@@ -147,9 +143,14 @@ public class BookListView extends Div implements BeforeEnterObserver, LocaleChan
         dateAddedColumn = grid.addColumn("dateAdded").setHeader(getTranslation("dateAdded")).setAutoWidth(true);
         statusColumn = grid.addColumn("status").setHeader(getTranslation("status")).setAutoWidth(true);
 
+
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+
         grid.setItems(query -> sampleBookService
-                .listForUser(currentUserName,VaadinSpringDataHelpers.toSpringPageRequest(query),filters)
+                .listForUser(username,VaadinSpringDataHelpers.toSpringPageRequest(query),filters)
                 .stream());
+        grid.addClassName("grid-view");
+        grid.getStyle().setColor("brown");
         grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
 
         // when a row is selected or deselected, populate form
@@ -178,6 +179,9 @@ public class BookListView extends Div implements BeforeEnterObserver, LocaleChan
 
         attachImageUpload(image, imagePreview);
 
+
+        currentUser = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
         cancel.addClickListener(e -> {
             clearForm();
@@ -234,6 +238,17 @@ public class BookListView extends Div implements BeforeEnterObserver, LocaleChan
     }
     @Override
     public void beforeEnter(BeforeEnterEvent event) {
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null ||
+                !authentication.isAuthenticated() ||
+                authentication.getName().equals("anonymousUser")) {
+
+            event.forwardTo(LoginView.class);
+            return;
+        }
+
         Optional<Long> sampleBookId = event.getRouteParameters().get(SAMPLEBOOK_ID).map(Long::parseLong);
         if (sampleBookId.isPresent()) {
             Optional<SampleBook> sampleBookFromBackend = sampleBookService.get(sampleBookId.get());
@@ -277,7 +292,6 @@ public class BookListView extends Div implements BeforeEnterObserver, LocaleChan
         dateAdded = new DatePicker("Date Added");
         dateAdded.setReadOnly(true);
         status = new ComboBox<>("Status");
-
         formLayout.add(imageLabel, image, name, author, publicationDate, pages, isbn,dateAdded,status);
 
         editorDiv.add(formLayout);
