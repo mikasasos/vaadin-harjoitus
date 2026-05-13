@@ -48,6 +48,7 @@ import java.io.ByteArrayOutputStream;
 import java.time.LocalDate;
 import java.util.*;
 
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.persistence.criteria.*;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
@@ -56,7 +57,7 @@ import org.vaadin.lineawesome.LineAwesomeIconUrl;
 @Route(value = "/:sampleBookID?/:action?(edit)", layout = MainLayout.class)
 @Menu(order = 0, icon = LineAwesomeIconUrl.COLUMNS_SOLID)
 @RouteAlias("")
-@PermitAll
+@RolesAllowed({"USER","ADMIN"})
 public class BookListView extends Div implements BeforeEnterObserver, LocaleChangeObserver, HasDynamicTitle {
 
     private final String SAMPLEBOOK_ID = "sampleBookID";
@@ -238,10 +239,6 @@ public class BookListView extends Div implements BeforeEnterObserver, LocaleChan
                 if (this.sampleBook == null) {
                     this.sampleBook = new SampleBook();
                 }
-
-                /*if (this.sampleBook.getBookDetail() == null) {
-                    this.sampleBook.setBookDetail(new BookDetail());
-                }*/
 
                 binder.writeBean(this.sampleBook);
                 sampleBook.setDateAdded(LocalDate.now());
@@ -438,6 +435,7 @@ public class BookListView extends Div implements BeforeEnterObserver, LocaleChan
             });*/
 
             Div actions = new Div(reset, search);
+            //Div actions = new Div(reset, search,testPush);
             actions.addClassName(LumoUtility.Gap.SMALL);
             actions.addClassName("actions");
 
@@ -494,7 +492,6 @@ public class BookListView extends Div implements BeforeEnterObserver, LocaleChan
                 predicates.add(criteriaBuilder.or(namePredicate,authorPredicate));
             }
             return criteriaBuilder.and(predicates.toArray(Predicate[]::new));
-            //EI TEHTY, JOIN join user with book
         }
 
         private String ignoreCharacters(String characters, String in) {
@@ -616,6 +613,6 @@ public class BookListView extends Div implements BeforeEnterObserver, LocaleChan
         status.setItemLabelGenerator(item ->
                 getTranslation("status." + item.name().toLowerCase()));
 
-        UI.getCurrent().getPage().setTitle(getPageTitle());
+        UI.getCurrent().navigate(BookListView.class);
     }
 }

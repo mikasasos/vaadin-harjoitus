@@ -78,6 +78,7 @@ public class MainLayout extends AppLayout implements AfterNavigationObserver, Lo
         toggle.setAriaLabel("Menu toggle");
 
         viewTitle = new H1();
+        viewTitle.setText(getTranslation("pagetitle"));
         viewTitle.addClassNames(LumoUtility.FontSize.LARGE, LumoUtility.Margin.NONE);
 
         addToNavbar(true, toggle, viewTitle);
