@@ -134,7 +134,7 @@ public class MainLayout extends AppLayout implements AfterNavigationObserver, Lo
                                 new ByteArrayInputStream(user.getProfilePicture()),
                                 "profile-pic",
                                 "image/jpeg",
-                                -1
+                                user.getProfilePicture().length
                         ));
                 avatar.setImageHandler(imageHandler);
             }

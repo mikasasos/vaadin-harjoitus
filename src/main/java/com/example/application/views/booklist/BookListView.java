@@ -239,16 +239,6 @@ public class BookListView extends Div implements BeforeEnterObserver, LocaleChan
     @Override
     public void beforeEnter(BeforeEnterEvent event) {
 
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-        if (authentication == null ||
-                !authentication.isAuthenticated() ||
-                authentication.getName().equals("anonymousUser")) {
-
-            event.forwardTo(LoginView.class);
-            return;
-        }
-
         Optional<Long> sampleBookId = event.getRouteParameters().get(SAMPLEBOOK_ID).map(Long::parseLong);
         if (sampleBookId.isPresent()) {
             Optional<SampleBook> sampleBookFromBackend = sampleBookService.get(sampleBookId.get());
