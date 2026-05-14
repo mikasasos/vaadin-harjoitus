@@ -127,7 +127,6 @@ public class MainLayout extends AppLayout implements AfterNavigationObserver, Lo
 
             Avatar avatar = new Avatar(user.getName());
 
-
             if (user.getProfilePicture() != null) {
                 DownloadHandler imageHandler = DownloadHandler
                         .fromInputStream(event -> new DownloadResponse(
